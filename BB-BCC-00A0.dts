@@ -49,7 +49,7 @@
         "P9.16",        /* GPMC: gpmc_ad14 */
         "P9.15",        /* GPMC: gpmc_ad15*/
         /* GPMC Control Lines */
-        "P8.12",        /* GPMC: gpmc_be1n */\
+        "P8.12",        /* GPMC: gpmc_be1n */
         "P9.7",         /* GPMC: gpmc_advn_ale */
         "P9.8",         /* GPMC: gpmc_oen_ren */
         "P9.10",        /* GPMC: gpmc_wen */
@@ -171,7 +171,8 @@
 
             /* chip select ranges */
             /* ranges = <cs-number> 0 <physical address of mapping> <size> */
-            ranges = <0 0 0x00000000 0x00001000 /* CS0 @addr 0x0000000, size 0x00001000 */
+            // Must be two seperate entries. one is for bram, the other registers
+            ranges = <0 0 0x00000000 0x00001000   /* CS0 @addr 0x0000000, size 0x00001000 */
                       1 0 0x00002000 0x00001000>; /* CS1 @addr 0x0002000, size 0x00001000 */
             
 
@@ -194,12 +195,12 @@
                     // the parent node's #address-cells and #size-cells (<2> and <1> here) 
                     // in this situation, each address value is 2 cells (64 bits) and length is
                     // 1 cell.
-                    reg = <0x00000000 0x00001000>;
+                    reg = <0x0000000 0x1000>;
                     // This means bram0 is assigned one address range; 0x00000000 to 0x00000fff.
                 };
 
                 registers@2000 {
-                    reg = <0x00002000 0x00001000>;
+                    reg = <0x0002000 0x1000>;
                     // registers are assigned address range: 0x00002000 to 0x00002fff
                 };
             }; 
