@@ -181,8 +181,8 @@
                 // the format is: "<manufacturer>,<model>". The next string is other devices that this
                 // device is compatible with
                 compatible = "xilinx,xc3s200a","sram";
-                address-cells =<1>;
-                size-cells = <1>;
+                #address-cells =<1>;
+                #size-cells = <1>;
                 // width of the hardware interface in bytes. Since I want to use 16 bits (2 bytes)
                 // for my interface I use 1. You could use 1, and then remove the upper (or lower 
                 // have to check?) 8 pin configs above.
