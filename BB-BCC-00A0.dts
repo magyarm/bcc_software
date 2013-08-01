@@ -69,9 +69,45 @@
             pinctrl_spi0: pinctrl_spi0_pins {
                 pinctrl-single,pins = <                                        
                     0x150 0x30    /* P9_22 = mcasp0_aclkx.spi0_sclk                 , OUTPUT_PULLUP | MODE0 */
-                    0x154 0x30    /* P9_21 = mcasp0_fsx.spi0_d0                     , INPUT_PULLUP | MODE0 */
+                    0x154 0x30    /* P9_21 = mcasp0_fsx.spi0_d0                    nts are the sam , INPUT_PULLUP | MODE0 */
                     0x158 0x10    /* P9_18 = mcasp0_axr0.spi0_d1                    , OUTPUT_PULLUP | MODE0 */
                     0x15C 0x10    /* P9_17 = mcasp0_ahclkr.spi0_cs0                 , OUTPUT_PULLUP | MODE0 */                    
+                >;
+            };
+
+            bcc_gpmc: pinmux_bcc_gpmc {
+                pinctrl-single,pins = <
+                    /* clock */
+                    0x08C 0x30  /* gpmc_clk, INPUT_PULLUP | MODE0 */
+               
+                    /* address/data muxed bus */
+                    0x000 0x30  /* gpmc_ad0, INPUT_PULLUP | MODE0 */
+                    0x004 0x30  /* gpmc_ad1, INPUT_PULLUP | MODE0 */
+                    0x008 0x30  /* gpmc_ad2, INPUT_PULLUP | MODE0 */
+                    0x00c 0x30  /* gpmc_ad3, INPUT_PULLUP | MODE0 */
+                    0x010 0x30  /* gpmc_ad4, INPUT_PULLUP | MODE0 */
+                    0x014 0x30  /* gpmc_ad5, INPUT_PULLUP | MODE0 */
+                    0x018 0x30  /* gpmc_ad6, INPUT_PULLUP | MODE0 */
+                    0x01c 0x30  /* gpmc_ad7, INPUT_PULLUP | MODE0 */
+                    0x020 0x30  /* gpmc_ad8, INPUT_PULLUP | MODE0 */
+                    0x024 0x30  /* gpmc_ad9, INPUT_PULLUP | MODE0 */
+                    0x028 0x30  /* gpmc_ad10, INPUT_PULLUP | MODE0 */
+                    0x02c 0x30  /* gpmc_ad11, INPUT_PULLUP | MODE0 */
+                    0x030 0x30  /* gpmc_ad12, INPUT_PULLUP | MODE0 */
+                    0x034 0x30  /* gpmc_ad13, INPUT_PULLUP | MODE0 */
+                    0x038 0x30  /* gpmc_ad14, INPUT_PULLUP | MODE0 */
+                    0x03c 0x30  /* gpmc_ad15, INPUT_PULLUP | MODE0 */
+               
+                    /* control */
+                    0x090 0x10  /* gpmc_advn_ale, OUTPUT_PULLUP | MODE0 */
+                    0x094 0x10  /* gpmc_oen_ren, OUTPUT_PULLUP | MODE0 */
+                    0x098 0x10  /* gpmc_wen, OUTPUT_PULLUP | MODE0 */
+                    0x09c 0x10  /* gpmc_be0n_cle, OUTPUT_PULLUP | MODE0 */
+               
+                    /* chipselects */
+                    0x07C 0x10  /* gpmc_csn0, OUTPUT_PULLUP | MODE0 */
+                    0x080 0x10  /* gpmc_csn1, OUTPUT_PULLUP | MODE0 */
+                    0x084 0x10  /* gpmc_csn2, OUTPUT_PULLUP | MODE0 */
                 >;
             };
         };
@@ -85,7 +121,7 @@
             status            = "okay";
             pinctrl-names    = "default";
             pinctrl-0        = <&pinctrl_spi0>;    
-           /* cs-gpios         = <&gpio4 17 0>; /*&I2C1_SCL instead?*/
+           
 
             spi0_0{
                 #address-cells       = <1>;
@@ -105,4 +141,71 @@
             };
         };
     };
+
+    fragment@2 {
+        target = <&gpmc>;
+        depth = <1>; /* only create devices on depth 1*/
+
+        /* stupid warnings */
+        // Don't yet understand why these are here? Notes further down
+        // is this the parent address used for the ranges below?
+        #address-cells = <1>;
+        #size-cells = <1>;
+        ranges;
+
+        __overlay__ {
+            // Status controls if the device is ON/OFF. Turning on here
+            status = "okay";
+
+            // Sets the size (number of uint32's) of address variables in reg property
+            #address-cells = <2>;
+            // Sets the size (number of uint32's) of length variable in reg property
+            #size-cells = <1>;
+
+            gpmc,num-cs = <3>;
+
+            /* set up the pin mux for the GPMC signals */
+            pinctrl-names = "default";          
+            pinctrl-0 = <&bcc_gpmc>;  
+
+
+            /* chip select ranges */
+            /* ranges = <cs-number> 0 <physical address of mapping> <size> */
+            ranges = <0 0 0x00000000 0x00001000 /* CS0 @addr 0x0000000, size 0x00001000 */
+                      1 0 0x00002000 0x00001000>; /* CS1 @addr 0x0002000, size 0x00001000 */
+            
+
+            sram0 {
+                // compatible is the key word used by the OS to decide which driver to bind to this device
+                // the format is: "<manufacturer>,<model>". The next string is other devices that this
+                // device is compatible with
+                compatible = "xilinx,xc3s200a","sram";
+                address-cells =<1>;
+                size-cells = <1>;
+                // width of the hardware interface in bytes. Since I want to use 16 bits (2 bytes)
+                // for my interface I use 1. You could use 1, and then remove the upper (or lower 
+                // have to check?) 8 pin configs above.
+                bank-width = <2>;
+
+                bram@0 {
+                    // reg is a list of tuples representing an address range used by the device
+                    // reg = < address1 length1 [address2 length2] [address3 length3]...>
+                    // address and length are variable of variable size. Interpreting reg requires
+                    // the parent node's #address-cells and #size-cells (<2> and <1> here) 
+                    // in this situation, each address value is 2 cells (64 bits) and length is
+                    // 1 cell.
+                    reg = <0x00000000 0x00001000>;
+                    // This means bram0 is assigned one address range; 0x00000000 to 0x00000fff.
+                };
+
+                registers@2000 {
+                    reg = <0x00002000 0x00001000>;
+                    // registers are assigned address range: 0x00002000 to 0x00002fff
+                };
+            }; 
+        };
+
+    };
+
+
 };
