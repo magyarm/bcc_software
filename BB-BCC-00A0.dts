@@ -172,8 +172,8 @@
             /* chip select ranges */
             /* ranges = <cs-number> 0 <physical address of mapping> <size> */
             // Must be two seperate entries. one is for bram, the other registers
-            ranges = <0 0 0x00000000 0x00001000   /* CS0 @addr 0x0000000, size 0x00001000 */
-                      1 0 0x00002000 0x00001000>; /* CS1 @addr 0x0002000, size 0x00001000 */
+            ranges = <0 0 0x00000000 0x00001000>;   /* CS0 @addr 0x0000000, size 0x00001000 */
+                     <1 0 0x00002000 0x00001000>; /* CS1 @addr 0x0002000, size 0x00001000 */
             
 
             sram0 {
